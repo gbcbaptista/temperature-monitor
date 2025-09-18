@@ -1,4 +1,3 @@
-// src/components/TemperatureChart.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -13,6 +12,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
 } from "chart.js";
 import { useLocaleStore } from "@/store/localStore";
 
@@ -129,7 +129,7 @@ const TemperatureChart = () => {
         label: currentLocale.labels.temperature,
         data: temperatureData.map((data) => data.temperature),
         borderColor: ACCENT_COLOR,
-        backgroundColor: `${ACCENT_COLOR}33`, // 20% opacity
+        backgroundColor: `${ACCENT_COLOR}33`,
         tension: 0.2,
         pointRadius: 1,
         pointHoverRadius: 7,
@@ -137,7 +137,7 @@ const TemperatureChart = () => {
     ],
   };
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<"line"> = {
     scales: { y: { beginAtZero: false, suggestedMin: 20, suggestedMax: 30 } },
     animation: { duration: 200 },
   };
@@ -164,7 +164,7 @@ const TemperatureChart = () => {
         <p>{currentLocale.labels.loading}</p>
       ) : temperatureData.length > 0 ? (
         <div className="bg-card p-4 rounded-lg shadow-xl">
-          <Line data={chartData} options={chartOptions as any} />
+          <Line data={chartData} options={chartOptions} />
         </div>
       ) : (
         <p>{currentLocale.labels.noData}</p>
