@@ -161,6 +161,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Gabriel Baptista**
 
-- [LinkedIn](https://www.linkedin.com/in/gbcbaptista/)
+- [LinkedIn](https://www.linkedin.com/in/gabriel-baptista-cerqueira)
 - [GitHub](https://github.com/gbcbaptista)
 - [Portfolio](https://gabriel-baptista.dev/)
