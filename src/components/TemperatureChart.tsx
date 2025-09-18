@@ -48,6 +48,10 @@ const LOCALES = {
       disconnecting: "Disconnecting...",
       disconnected: "Disconnected",
       uninstantiated: "Uninstantiated",
+      currentTemp: "Current Temperature",
+      maxTemp24h: "Max Temperature (24h)",
+      minTemp24h: "Min Temperature (24h)",
+      avgTemp24h: "Average Temperature (24h)",
     },
   },
   BR: {
@@ -65,6 +69,10 @@ const LOCALES = {
       disconnecting: "Desconectando...",
       disconnected: "Desconectado",
       uninstantiated: "Não instanciado",
+      currentTemp: "Temperatura Atual",
+      maxTemp24h: "Temperatura Máxima (24h)",
+      minTemp24h: "Temperatura Mínima (24h)",
+      avgTemp24h: "Temperatura Média (24h)",
     },
   },
 };
@@ -72,6 +80,13 @@ const LOCALES = {
 interface TemperatureData {
   timestamp: string;
   temperature: number;
+}
+
+interface TemperatureStats {
+  current: number | null;
+  max: number | null;
+  min: number | null;
+  average: number | null;
 }
 
 const TemperatureChart = () => {
@@ -122,6 +137,24 @@ const TemperatureChart = () => {
     });
   };
 
+  // Calcular estatísticas de temperatura
+  const calculateTemperatureStats = (): TemperatureStats => {
+    if (temperatureData.length === 0) {
+      return { current: null, max: null, min: null, average: null };
+    }
+
+    const temperatures = temperatureData.map((data) => data.temperature);
+    const current = temperatures[temperatures.length - 1];
+    const max = Math.max(...temperatures);
+    const min = Math.min(...temperatures);
+    const average =
+      temperatures.reduce((sum, temp) => sum + temp, 0) / temperatures.length;
+
+    return { current, max, min, average };
+  };
+
+  const stats = calculateTemperatureStats();
+
   const chartData = {
     labels: temperatureData.map((data) => formatTimeForLocale(data.timestamp)),
     datasets: [
@@ -150,36 +183,89 @@ const TemperatureChart = () => {
     [ReadyState.UNINSTANTIATED]: currentLocale.labels.uninstantiated,
   }[readyState];
 
+  const StatCard = ({
+    title,
+    value,
+    icon,
+  }: {
+    title: string;
+    value: string;
+    icon: string;
+  }) => (
+    <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-sky-400 hover:shadow-xl transition-shadow duration-300">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-800">{value}</p>
+        </div>
+        <div className="text-4xl text-sky-400">{icon}</div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="text-center">
+    <div className="text-center max-w-7xl mx-auto p-4">
       <h2 className="text-3xl font-bold text-primary mb-2">
         {currentLocale.labels.title}
       </h2>
-      <p className="text-secondary mb-6">
+      <p className="text-secondary mb-8">
         {currentLocale.labels.connectionStatus}:{" "}
-        <strong>{connectionStatus}</strong>
+        <strong
+          className={`px-2 py-1 rounded-full text-sm ${
+            readyState === ReadyState.OPEN
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {connectionStatus}
+        </strong>
       </p>
 
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title={currentLocale.labels.currentTemp}
+          value={
+            stats.current !== null ? `${stats.current.toFixed(1)}°C` : "N/A"
+          }
+          icon="🌡️"
+        />
+        <StatCard
+          title={currentLocale.labels.maxTemp24h}
+          value={stats.max !== null ? `${stats.max.toFixed(1)}°C` : "N/A"}
+          icon="🔥"
+        />
+        <StatCard
+          title={currentLocale.labels.minTemp24h}
+          value={stats.min !== null ? `${stats.min.toFixed(1)}°C` : "N/A"}
+          icon="❄️"
+        />
+        <StatCard
+          title={currentLocale.labels.avgTemp24h}
+          value={
+            stats.average !== null ? `${stats.average.toFixed(1)}°C` : "N/A"
+          }
+          icon="📊"
+        />
+      </div>
+
       {isLoading ? (
-        <p>{currentLocale.labels.loading}</p>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="animate-pulse flex items-center justify-center">
+            <div className="text-lg text-gray-600">
+              {currentLocale.labels.loading}
+            </div>
+          </div>
+        </div>
       ) : temperatureData.length > 0 ? (
-        <div className="bg-card p-4 rounded-lg shadow-xl">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
           <Line data={chartData} options={chartOptions} />
         </div>
       ) : (
-        <p>{currentLocale.labels.noData}</p>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <p className="text-gray-600">{currentLocale.labels.noData}</p>
+        </div>
       )}
-
-      <p className="mt-6 text-lg">
-        {currentLocale.labels.lastReading}:{" "}
-        <strong>
-          {temperatureData.length > 0
-            ? `${temperatureData[
-                temperatureData.length - 1
-              ].temperature.toFixed(2)}°C`
-            : "N/A"}
-        </strong>
-      </p>
     </div>
   );
 };
