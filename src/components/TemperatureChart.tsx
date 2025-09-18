@@ -1,17 +1,37 @@
+// src/components/TemperatureChart.tsx
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import "chart.js/auto";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { useLocaleStore } from "@/store/localStore";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const API_URL =
   "https://bx85msyxwb.execute-api.sa-east-1.amazonaws.com/dev/temperatures";
-
 const WEBSOCKET_URL =
   "wss://eu2xrp83l0.execute-api.sa-east-1.amazonaws.com/dev/";
-
 const ACCENT_COLOR = "#38bdf8";
 
-// Localization configurations
 const LOCALES = {
   US: {
     code: "en-US",
@@ -49,24 +69,26 @@ const LOCALES = {
   },
 };
 
-function App() {
-  const [temperatureData, setTemperatureData] = useState([]);
+interface TemperatureData {
+  timestamp: string;
+  temperature: number;
+}
+
+const TemperatureChart = () => {
+  const [temperatureData, setTemperatureData] = useState<TemperatureData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedLocale, setSelectedLocale] = useState("US");
+  const { selectedLocale } = useLocaleStore();
 
   useEffect(() => {
     const fetchInitialData = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(API_URL);
-        if (!response.ok) {
-          throw new Error("Failed to fetch data from API");
-        }
-        const historicalData = await response.json();
-
+        const historicalData: TemperatureData[] = await response.json();
         historicalData.sort(
-          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
-
         setTemperatureData(historicalData);
       } catch (error) {
         console.error("Error loading historical data:", error);
@@ -74,30 +96,29 @@ function App() {
         setIsLoading(false);
       }
     };
-
     fetchInitialData();
   }, []);
 
   const { lastJsonMessage, readyState } = useWebSocket(WEBSOCKET_URL, {
-    shouldReconnect: (closeEvent) => true,
+    shouldReconnect: () => true,
   });
 
   useEffect(() => {
-    if (lastJsonMessage !== null) {
-      setTemperatureData((prevData) => {
-        const newData = [...prevData, lastJsonMessage];
-        return newData.slice(-1000);
-      });
+    if (lastJsonMessage) {
+      setTemperatureData((prevData) =>
+        [...prevData, lastJsonMessage as TemperatureData].slice(-1000)
+      );
     }
   }, [lastJsonMessage]);
 
   const currentLocale = LOCALES[selectedLocale];
 
-  const formatTimeForLocale = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString(currentLocale.code, {
+  const formatTimeForLocale = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString(currentLocale.code, {
       timeZone: currentLocale.timezone,
-      hour12: selectedLocale === "US",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
     });
   };
 
@@ -108,31 +129,17 @@ function App() {
         label: currentLocale.labels.temperature,
         data: temperatureData.map((data) => data.temperature),
         borderColor: ACCENT_COLOR,
-        backgroundColor: `${ACCENT_COLOR}80`, // Adds 50% opacity
+        backgroundColor: `${ACCENT_COLOR}33`, // 20% opacity
         tension: 0.2,
-        pointRadius: temperatureData.map((_, index) =>
-          index === temperatureData.length - 1 ? 5 : 1
-        ),
-        pointBackgroundColor: ACCENT_COLOR,
-        pointBorderColor: temperatureData.map((_, index) =>
-          index === temperatureData.length - 1 ? ACCENT_COLOR : "transparent"
-        ),
+        pointRadius: 1,
         pointHoverRadius: 7,
       },
     ],
   };
 
   const chartOptions = {
-    scales: {
-      y: {
-        beginAtZero: false,
-        suggestedMin: 20,
-        suggestedMax: 30,
-      },
-    },
-    animation: {
-      duration: 100,
-    },
+    scales: { y: { beginAtZero: false, suggestedMin: 20, suggestedMax: 30 } },
+    animation: { duration: 200 },
   };
 
   const connectionStatus = {
@@ -144,40 +151,37 @@ function App() {
   }[readyState];
 
   return (
-    <div className="container text-center">
-      <div className="mb-4">
-        <select
-          value={selectedLocale}
-          onChange={(e) => setSelectedLocale(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="US">🇺🇸 United States (EST)</option>
-          <option value="BR">🇧🇷 Brazil (BRT)</option>
-        </select>
-      </div>
-
-      <h1>{currentLocale.labels.title}</h1>
-      <p>
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-primary mb-2">
+        {currentLocale.labels.title}
+      </h2>
+      <p className="text-secondary mb-6">
         {currentLocale.labels.connectionStatus}:{" "}
         <strong>{connectionStatus}</strong>
       </p>
+
       {isLoading ? (
         <p>{currentLocale.labels.loading}</p>
       ) : temperatureData.length > 0 ? (
-        <Line data={chartData} options={chartOptions} />
+        <div className="bg-card p-4 rounded-lg shadow-xl">
+          <Line data={chartData} options={chartOptions as any} />
+        </div>
       ) : (
         <p>{currentLocale.labels.noData}</p>
       )}
-      <p className="mt-20 fs-small">
+
+      <p className="mt-6 text-lg">
         {currentLocale.labels.lastReading}:{" "}
         <strong>
           {temperatureData.length > 0
-            ? `${temperatureData[temperatureData.length - 1].temperature}°C`
+            ? `${temperatureData[
+                temperatureData.length - 1
+              ].temperature.toFixed(2)}°C`
             : "N/A"}
         </strong>
       </p>
     </div>
   );
-}
+};
 
-export default App;
+export default TemperatureChart;
