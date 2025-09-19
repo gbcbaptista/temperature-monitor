@@ -94,6 +94,14 @@ const TemperatureChart = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { selectedLocale } = useLocaleStore();
 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
@@ -171,8 +179,19 @@ const TemperatureChart = () => {
   };
 
   const chartOptions: ChartOptions<"line"> = {
-    scales: { y: { beginAtZero: false, suggestedMin: 20, suggestedMax: 30 } },
+    scales: {
+      y: { beginAtZero: false, suggestedMin: 20, suggestedMax: 30 },
+      x: {
+        ticks: {
+          maxTicksLimit: window.innerWidth < 768 ? 4 : undefined,
+          maxRotation: window.innerWidth < 768 ? 0 : undefined,
+          minRotation: window.innerWidth < 768 ? 0 : undefined,
+        },
+      },
+    },
     animation: { duration: 200 },
+    responsive: true,
+    maintainAspectRatio: false,
   };
 
   const connectionStatus = {
@@ -258,7 +277,7 @@ const TemperatureChart = () => {
           </div>
         </div>
       ) : temperatureData.length > 0 ? (
-        <div className="rounded-lg shadow-lg bg-white min-h-[160px] md:p-6">
+        <div className="rounded-lg shadow-lg bg-white md:p-6 h-[160px] md:h-[400px]">
           <Line data={chartData} options={chartOptions} className="" />
         </div>
       ) : (
