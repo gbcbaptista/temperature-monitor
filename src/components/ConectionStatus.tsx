@@ -18,7 +18,7 @@ const ConectionStatus = () => {
   useEffect(() => {
     if (lastJsonMessage) {
       setTemperatureData(
-        [...temperatureData, lastJsonMessage as TemperatureData].slice(-1000)
+        [...temperatureData, lastJsonMessage as TemperatureData].slice(-2880) //Mantém as ultimas 24*60*2 =  2880 medições
       );
     }
   }, [lastJsonMessage]);
