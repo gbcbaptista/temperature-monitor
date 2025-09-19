@@ -1,7 +1,7 @@
 "use client";
 
-import TemperatureChart from "@/components/TemperatureChart";
+import TemperatureDashboard from "@/components/TemperatureDashboard";
 
 export default function Home() {
-  return <TemperatureChart />;
+  return <TemperatureDashboard />;
 }
