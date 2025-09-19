@@ -194,7 +194,7 @@ const TemperatureChart = () => {
   }) => (
     <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-sky-400 hover:shadow-xl transition-shadow duration-300">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="w-full h-full">
           <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
           <p className="text-3xl font-bold text-gray-800">{value}</p>
         </div>
@@ -258,8 +258,8 @@ const TemperatureChart = () => {
           </div>
         </div>
       ) : temperatureData.length > 0 ? (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <Line data={chartData} options={chartOptions} />
+        <div className="rounded-lg shadow-lg bg-white min-h-[160px] md:p-6">
+          <Line data={chartData} options={chartOptions} className="" />
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-lg p-8">
